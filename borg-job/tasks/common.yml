@@ -1,0 +1,51 @@
+---
+
+- name: Init borg repository
+  command: borg init -e none "{{borg_user}}@{{borg_host}}:{{borg_repos_dir}}/{{ansible_fqdn}}/{{job_name}}"
+  register: ibr
+  changed_when: ibr.rc == 0
+  failed_when: ibr.rc not in [0, 2]
+
+#- name: Set borg repository permissions
+#  file:
+#    path: "{{borg_repos_dir}}/{{ansible_fqdn}}/{{job_name}}"
+#    owner: "{{borg_user}}"
+#    group: "{{borg_user}}"
+#    state: directory
+#    recurse: yes
+#  delegate_to: "{{borg_host}}"
+
+- name: Create borgmatic config
+  template:
+    src: "job.yaml.j2"
+    dest: "/etc/borgmatic.d/{{job_name}}.yaml"
+
+- name: Set cron task for borgmatic
+  cron:
+    name: "borgmatic {{job_name}}"
+    cron_file: "borgmatic"
+    user: root
+    weekday: "{{job_schedule_weekday}}"
+    minute: "{{job_schedule_minute}}"
+    hour: "{{job_schedule_hour}}"
+    job: "/usr/local/bin/borgmatic -c /etc/borgmatic.d/{{job_name}}.yaml -v 1 2> /var/backups/borg.log"
+
+- name: Set cron environment var for borgmatic
+  cron:
+    name: BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK
+    value: yes
+    env: yes
+    cron_file: "borgmatic"
+    user: root
+
+- name: Install before backup script
+  template:
+    src: "backup_postgres.sh.j2"
+    dest: "/usr/local/bin/backup_postgres.sh"
+    mode: 700
+
+- name: Create directory for SQL dump
+  file:
+    path: "{{pg_temporary_backup_store}}"
+    state: directory
+  when: backup_postgres

@@ -1,0 +1,22 @@
+#!/bin/bash
+
+{% if pg_pit_backup -%}
+if [ {{ pg_full_backup_expression }} ] || [ ! -f {{ pg_temporary_backup_store }}/base.tar.gz ]
+then
+    sudo rm {{ pg_temporary_backup_store }}/* -r
+    sudo rm {{ pg_xlog_store }}/* -r
+    sudo -u postgres pg_basebackup -x -F tar -z -D {{ pg_temporary_backup_store }}
+    echo "DB backup completed"
+else
+    sudo -u postgres psql -c 'SELECT pg_switch_xlog()'
+    echo "XLOG switch completed"
+fi
+{% else -%}
+{% if pg_databases %}
+{% for db in pg_databases -%}
+sudo -u postgres pg_dump {{ db }} > {{ pg_temporary_backup_store }}/{{ db }}.sql
+{% endfor %}
+{% else -%}
+sudo -u postgres pg_dumpall > {{ pg_temporary_backup_store }}/all.sql
+{% endif %}
+{% endif %}

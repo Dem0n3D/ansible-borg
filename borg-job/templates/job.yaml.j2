@@ -1,0 +1,45 @@
+location:
+  source_directories:
+    {% if backup_postgres -%}
+    - {{ pg_temporary_backup_store }}
+    {% if pg_pit_backup -%}
+    - {{ pg_xlog_store }}
+    {% endif %}
+    {% else %}
+    {% if dirs -%}
+    {% for dir in dirs -%}
+    - {{ dir }}
+    {% endfor %}
+    {% endif %}
+    {% endif %}
+
+  repositories:
+    - "{{ borg_user }}@{{ borg_host }}:{{borg_repos_dir}}/{{ansible_fqdn}}/{{job_name}}"
+
+  {% if exclude_dirs -%}
+  exclude_patterns:
+  {% for dir in exclude_dirs -%}
+    - {{ dir }}
+  {% endfor %}
+  {% endif %}
+
+retention:
+  keep_daily: 7
+  keep_weekly: 4
+  keep_monthly: 12
+  keep_yearly: 4
+
+consistency:
+  checks:
+    - repository
+    - archives
+
+hooks:
+  {% if backup_postgres -%}
+  before_backup:
+    - /usr/local/bin/backup_postgres.sh
+  {% endif -%}
+  after_backup:
+    - {{ success_notification_command }}
+  on_error:
+    - {{ error_notification_command }}

@@ -1,0 +1,58 @@
+---
+
+- name: Install borg
+  apt:
+    name=borgbackup
+    state=present
+
+#- name: Add borg user
+#  user: name={{borg_user}} append=yes generate_ssh_key=yes ssh_key_bits=4096
+
+- name: Generate SSH key
+  command: ssh-keygen -q -b 4096 -f /root/.ssh/id_rsa -N ""
+  args:
+    creates: /root/.ssh/id_rsa
+
+- name: Register ssh key
+  shell: cat /root/.ssh/id_rsa.pub
+  register: ssh_key
+  changed_when: false
+
+- name: Set authorized on borg host
+  authorized_key:
+    user: "{{borg_user}}"
+    state: present
+    key: "{{ssh_key.stdout}}"
+    key_options: 'command="cd {{borg_repos_dir}}/{{ansible_fqdn}}; borg serve --restrict-to-path {{borg_repos_dir}}/{{ansible_fqdn}}",restrict'
+  delegate_to: "{{borg_host}}"
+
+- name: Add borg host to known_hosts
+  known_hosts:
+    path: /root/.ssh/known_hosts
+    name: "{{borg_host}}"
+    key: "{{ lookup('pipe', 'ssh-keyscan -t ecdsa {{borg_host}}') }}"
+
+- name: Create repo dir
+  file:
+    path="{{borg_repos_dir}}/{{ansible_fqdn}}"
+    state=directory
+    owner={{borg_user}}
+    group={{borg_user}}
+    mode=750
+  delegate_to: "{{borg_host}}"
+
+- name: Install pip
+  apt:
+    name=python3-pip
+    state=present
+
+- name: Install borgmatic
+  pip:
+    name: borgmatic
+    executable: pip3
+
+- name: Create borgmatic config dir
+  file:
+    path="/etc/borgmatic.d"
+    state=directory
+    mode=750

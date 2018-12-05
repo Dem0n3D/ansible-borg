@@ -1,0 +1,15 @@
+---
+
+borg_user: borg
+exclude_dirs: []
+job_schedule_weekday: "*"
+job_schedule_minute: 0
+job_schedule_hour: 0
+success_notification_command: true
+error_notification_command: true
+backup_postgres: false
+pg_pit_backup: false
+pg_full_backup_expression: $(date +%d) -eq 1 # First day of month
+pg_temporary_backup_store: /var/backups/postgresql
+pg_xlog_store: /var/backups/pg_xlog
+pg_databases: []

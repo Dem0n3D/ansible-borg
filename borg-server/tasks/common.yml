@@ -1,0 +1,17 @@
+---
+
+- name: Install borg
+  apt:
+    name=borgbackup
+    state=present
+
+- name: Add borg user
+  user: name={{borg_user}}
+
+- name: Create repos dir
+  file:
+    path="{{borg_repos_dir}}"
+    state=directory
+    owner={{borg_user}}
+    group={{borg_user}}
+    mode=750

@@ -1,0 +1,4 @@
+---
+
+borg_user: borg
+borg_repos_dir: /home/{{borg_user}}/repos
