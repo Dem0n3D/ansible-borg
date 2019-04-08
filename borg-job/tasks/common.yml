@@ -1,10 +1,26 @@
 ---
 
 - name: Init borg repository
-  command: borg init -e none "{{borg_user}}@{{borg_host}}:{{borg_repos_dir}}/{{ansible_fqdn}}/{{job_name}}"
+  command: borg init -e keyfile "{{borg_user}}@{{borg_host}}:{{borg_repos_dir}}/{{ansible_fqdn}}/{{job_name}}"
+  environment:
+    BORG_PASSPHRASE: ""
   register: ibr
   changed_when: ibr.rc == 0
-  failed_when: ibr.rc not in [0, 2]
+  failed_when: ibr.rc != 0 and ibr.stderr.find("already exists") == -1
+
+- name: Export borg repo keyfile
+  command: borg key export --paper "{{borg_user}}@{{borg_host}}:{{borg_repos_dir}}/{{ansible_fqdn}}/{{job_name}}"
+  register: keyfile
+  when: ibr.rc == 0
+
+- name: Send borg repo keyfile
+  mail:
+    from: borg@semograph.com
+    to: baranov@semograph.com
+    subject: Borg keyfile for {{ansible_fqdn}}/{{job_name}}
+    body: "{{keyfile.stdout}}"
+    secure: never
+  when: ibr.rc == 0
 
 #- name: Set borg repository permissions
 #  file:

@@ -1,12 +1,14 @@
 ---
 
-- name: Install borg
-  apt:
-    name=borgbackup
-    state=present
+#- name: Install borg
+#  apt:
+#    name=borgbackup
+#    state=present
 
 #- name: Add borg user
 #  user: name={{borg_user}} append=yes generate_ssh_key=yes ssh_key_bits=4096
+
+# TODO: change root to borg_user
 
 - name: Generate SSH key
   command: ssh-keygen -q -b 4096 -f /root/.ssh/id_rsa -N ""
@@ -43,12 +45,15 @@
 
 - name: Install pip
   apt:
-    name=python3-pip
-    state=present
+    name:
+      - python3-pip
+    state: present
 
-- name: Install borgmatic
+- name: Install borg packages
   pip:
-    name: borgmatic
+    name:
+      - borgbackup
+      - borgmatic
     executable: pip3
 
 - name: Create borgmatic config dir
