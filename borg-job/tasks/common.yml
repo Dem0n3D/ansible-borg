@@ -44,12 +44,20 @@
     weekday: "{{job_schedule_weekday}}"
     minute: "{{job_schedule_minute}}"
     hour: "{{job_schedule_hour}}"
-    job: "/usr/local/bin/borgmatic -c /etc/borgmatic.d/{{job_name}}.yaml -v 1 2> /var/backups/borg.log"
+    job: "/usr/local/bin/borgmatic -c /etc/borgmatic.d/{{job_name}}.yaml -v 1 > /var/backups/borg.log 2>&1"
 
 - name: Set cron environment var for borgmatic
   cron:
     name: BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK
     value: yes
+    env: yes
+    cron_file: "borgmatic"
+    user: root
+
+- name: Set cron environment var PATH for borgmatic
+  cron:
+    name: PATH
+    value: "/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin"
     env: yes
     cron_file: "borgmatic"
     user: root

@@ -1,13 +1,14 @@
+#jinja2: lstrip_blocks: True, trim_blocks: True
 location:
   source_directories:
-    {% if backup_postgres -%}
+    {% if backup_postgres %}
     - {{ pg_temporary_backup_store }}
-    {% if pg_pit_backup -%}
+    {% if pg_pit_backup %}
     - {{ pg_xlog_store }}
     {% endif %}
     {% else %}
-    {% if dirs -%}
-    {% for dir in dirs -%}
+    {% if dirs %}
+    {% for dir in dirs %}
     - {{ dir }}
     {% endfor %}
     {% endif %}
@@ -16,9 +17,9 @@ location:
   repositories:
     - "{{ borg_user }}@{{ borg_host }}:{{borg_repos_dir}}/{{ansible_fqdn}}/{{job_name}}"
 
-  {% if exclude_dirs -%}
+  {% if exclude_dirs %}
   exclude_patterns:
-  {% for dir in exclude_dirs -%}
+  {% for dir in exclude_dirs %}
     - {{ dir }}
   {% endfor %}
   {% endif %}
@@ -35,11 +36,19 @@ consistency:
     - archives
 
 hooks:
-  {% if backup_postgres -%}
+  {% if backup_postgres or before|length > 0 %}
   before_backup:
+  {% if backup_postgres %}
     - /usr/local/bin/backup_postgres.sh
-  {% endif -%}
+  {% endif %}
+  {% for hook in before %}
+    - {{ hook }}
+  {% endfor %}
+  {% endif %}
   after_backup:
+  {% for hook in after %}
+    - {{ hook }}
+  {% endfor %}
     - {{ success_notification_command }}
   on_error:
     - {{ error_notification_command }}

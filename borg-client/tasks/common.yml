@@ -1,10 +1,5 @@
 ---
 
-#- name: Install borg
-#  apt:
-#    name=borgbackup
-#    state=present
-
 #- name: Add borg user
 #  user: name={{borg_user}} append=yes generate_ssh_key=yes ssh_key_bits=4096
 
@@ -43,10 +38,12 @@
     mode=750
   delegate_to: "{{borg_host}}"
 
-- name: Install pip
+- name: Install pip and dependencies
   apt:
     name:
       - python3-pip
+      - libssl-dev
+      - libacl1-dev
     state: present
 
 - name: Install borg packages

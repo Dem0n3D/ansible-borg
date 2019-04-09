@@ -13,3 +13,5 @@ pg_full_backup_expression: $(date +%d) -eq 1 # First day of month
 pg_temporary_backup_store: /var/backups/postgresql
 pg_xlog_store: /var/backups/pg_xlog
 pg_databases: []
+before: []
+after: []
